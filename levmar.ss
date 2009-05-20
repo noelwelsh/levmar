@@ -10,7 +10,7 @@
 
 (unsafe!)
 
-(define liblevmar (ffi-lib (build-path here "levmar-2.4" "liblevmar")))
+(define liblevmar (ffi-lib (build-path here "liblevmar")))
 
 (define (_levmar_eval_fun n-functions n-points)
   (_fun
@@ -34,18 +34,18 @@
    (_levmar_eval_fun n-functions n-points)
                    ;; void (*func)(double *p, double *hx, int m, int n, void *adata)
                    ;; functional relation describing measurements.  A p \in R^m yields a \hat{x} \in  R^n
-   (_f64vector i) ;; I/O: initial parameter estimates. On output contains the estimated solution
+   (_f64vector i)  ;; I/O: initial parameter estimates. On output contains the estimated solution
    (_f64vector i)  ;; I: measurement vector. NULL implies a zero vector
    _int            ;; I: parameter vector dimension (i.e. #unknowns), m
    _int            ;; I: measurement vector dimension, n n >= m
    _int            ;; I: maximum number of iterations 
-   _pointer  ;; I: opts[0-4] = minim. options [\tau, \epsilon1, \epsilon2, \epsilon3, \delta]. Respectively the
+   _pointer        ;; I: opts[0-4] = minim. options [\tau, \epsilon1, \epsilon2, \epsilon3, \delta]. Respectively the
                    ;; scale factor for initial \mu, stopping thresholds for ||J^T e||_inf, ||Dp||_2 and ||e||_2 and the
                    ;; step used in difference approximation to the Jacobian. If \delta<0, the Jacobian is approximated
                    ;; with central differences which are more accurate (but slower!) compared to the forward differences
                    ;; employed by default. Set to NULL for defaults to be used.
                     
-   _pointer  ;; O: information regarding the minimization. Set to NULL if don't care
+   _pointer        ;; O: information regarding the minimization. Set to NULL if don't care
                    ;; info[0]= ||e||_2 at initial p.
                    ;; info[1-4]=[ ||e||_2, ||J^T e||_inf,  ||Dp||_2, \mu/max[J^T J]_ii ], all computed at estimated p.
                    ;; info[5]= # iterations,
@@ -63,7 +63,7 @@
    _pointer        ;; I: working memory, allocated internally if NULL. If !=NULL, it is assumed to point to 
                    ;; a memory chunk at least LM_DIF_WORKSZ(m, n)*sizeof(double) bytes long
                     
-   (_f64vector i)  ;; O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix.
+   (_cvector i)    ;; O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix.
                    ;; Set to NULL if not needed.
                     
    _scheme
@@ -81,7 +81,7 @@
 (define (minimize f n-points start-params data)
   (let* ([n-functions (f64vector-length start-params)]
          [start-params-copy (f64vector-copy start-params)]
-         [cov (make-f64vector (* n-functions n-functions))])
+         [cov (make-cvector _double (* n-functions n-functions))])
     (unless (>= n-points n-functions)
       (raise-mismatch-error
        'minimize

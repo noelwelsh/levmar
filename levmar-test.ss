@@ -41,10 +41,10 @@
        (check-= a 2.0 0.00001)
        (check-= p (/ pi 2) 0.00001))
      ;; Check Covariance is complete and symmetric
-     (check-eq? (f64vector-length covariance) 4)
-     (check-false (zero? (f64vector-ref covariance 0)))
-     (check-false (zero? (f64vector-ref covariance 1)))
-     (check-false (zero? (f64vector-ref covariance 2)))
-     (check-false (zero? (f64vector-ref covariance 3)))
-     (check-= (f64vector-ref covariance 1) (f64vector-ref covariance 2) 0.00001))))
+     (check-eq? (cvector-length covariance) 4)
+     (check-false (zero? (cvector-ref covariance 0)))
+     (check-false (zero? (cvector-ref covariance 1)))
+     (check-false (zero? (cvector-ref covariance 2)))
+     (check-false (zero? (cvector-ref covariance 3)))
+     (check-= (cvector-ref covariance 1) (cvector-ref covariance 2) 0.00001))))
   
