@@ -3,6 +3,7 @@
 (require scheme/foreign
          scheme/runtime-path
          (planet schematics/numeric:1/f64vector)
+         (planet schematics/mzgsl:1/low-level/ffi-types)
          "callback-f64vector.ss")
 
 (define-runtime-path here ".")
@@ -63,7 +64,7 @@
    _pointer        ;; I: working memory, allocated internally if NULL. If !=NULL, it is assumed to point to 
                    ;; a memory chunk at least LM_DIF_WORKSZ(m, n)*sizeof(double) bytes long
                     
-   (_f64vector i)  ;; O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix.
+   (_cvector i)    ;; O: Covariance matrix corresponding to LS solution; Assumed to point to a mxm matrix.
                    ;; Set to NULL if not needed.
                     
    _scheme
@@ -77,11 +78,11 @@
    liblevmar
    (_dlevmar_dif n-points n-functions)))
 
-
+;; ((f64vector any -> f64vector) natural f64vector any -> (values f64vector matrix))
 (define (minimize f n-points start-params data)
   (let* ([n-functions (f64vector-length start-params)]
          [start-params-copy (f64vector-copy start-params)]
-         [cov (make-f64vector (* n-functions n-functions))])
+         [cov (make-cvector _double (* n-functions n-functions))])
     (unless (>= n-points n-functions)
       (raise-mismatch-error
        'minimize
@@ -100,7 +101,8 @@
      #f
      cov
      data)
-    (values start-params-copy cov)))
+    (values start-params-copy
+            (cvector->gsl_matrix cov n-functions n-functions))))
 
 (provide
  minimize)

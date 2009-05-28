@@ -4,6 +4,7 @@
          scheme/math
          scheme/foreign
          (planet schematics/schemeunit:3/test)
+         (planet schematics/numeric:1/matrix)
          (planet schematics/numeric:1/f64vector)
          "levmar.ss")
 
@@ -41,10 +42,11 @@
        (check-= a 2.0 0.00001)
        (check-= p (/ pi 2) 0.00001))
      ;; Check Covariance is complete and symmetric
-     (check-eq? (f64vector-length covariance) 4)
-     (check-false (zero? (f64vector-ref covariance 0)))
-     (check-false (zero? (f64vector-ref covariance 1)))
-     (check-false (zero? (f64vector-ref covariance 2)))
-     (check-false (zero? (f64vector-ref covariance 3)))
-     (check-= (f64vector-ref covariance 1) (f64vector-ref covariance 2) 0.00001))))
+     (check-eq? (matrix-rows covariance) 2)
+     (check-eq? (matrix-cols covariance) 2)
+     (check-false (zero? (matrix-ref covariance 0 0)))
+     (check-false (zero? (matrix-ref covariance 0 1)))
+     (check-false (zero? (matrix-ref covariance 1 0)))
+     (check-false (zero? (matrix-ref covariance 1 1)))
+     (check-= (matrix-ref covariance 0 1) (matrix-ref covariance 1 0) 0.00001))))
   
