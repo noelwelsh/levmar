@@ -36,7 +36,7 @@
                    ;; void (*func)(double *p, double *hx, int m, int n, void *adata)
                    ;; functional relation describing measurements.  A p \in R^m yields a \hat{x} \in  R^n
    (_cvector i)    ;; I/O: initial parameter estimates. On output contains the estimated solution
-   (_f64vector i)  ;; I: measurement vector. NULL implies a zero vector
+   _pointer        ;; I: measurement vector. NULL implies a zero vector
    _int            ;; I: parameter vector dimension (i.e. #unknowns), m
    _int            ;; I: measurement vector dimension, n n >= m
    _int            ;; I: maximum number of iterations 
@@ -102,7 +102,7 @@
     ((lm-minimize n-functions n-points)
      (evaluate-shim f)
      params
-     (f64vector-zeros n-points)
+     #f
      n-functions
      n-points
      100
