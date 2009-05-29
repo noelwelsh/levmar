@@ -35,7 +35,7 @@
    (_levmar_eval_fun n-functions n-points)
                    ;; void (*func)(double *p, double *hx, int m, int n, void *adata)
                    ;; functional relation describing measurements.  A p \in R^m yields a \hat{x} \in  R^n
-   (_f64vector i)  ;; I/O: initial parameter estimates. On output contains the estimated solution
+   (_cvector i)    ;; I/O: initial parameter estimates. On output contains the estimated solution
    (_f64vector i)  ;; I: measurement vector. NULL implies a zero vector
    _int            ;; I: parameter vector dimension (i.e. #unknowns), m
    _int            ;; I: measurement vector dimension, n n >= m
@@ -80,18 +80,28 @@
 
 ;; ((f64vector any -> f64vector) natural f64vector any -> (values f64vector matrix))
 (define (minimize f n-points start-params data)
-  (let* ([n-functions (f64vector-length start-params)]
-         [start-params-copy (f64vector-copy start-params)]
-         [cov (make-cvector _double (* n-functions n-functions))])
-    (unless (>= n-points n-functions)
+  (define n-functions (f64vector-length start-params))
+  (unless (>= n-points n-functions)
       (raise-mismatch-error
        'minimize
-       (format "The number of points, ~a, is greater than or equal to the number of functions ~a." n-points n-functions)
+       (format "The number of points, ~a >= number of functions ~a."
+               n-points n-functions)
        n-points))
-
+  
+  (let* ([params-block (malloc _double n-functions 'raw)]
+         [params (make-cvector* params-block _double n-functions)]
+         [cov-size (* n-functions n-functions)]
+         ;; Allocate a block of memory that won't move
+         [cov-block (malloc _double cov-size 'raw)]
+         [cov (make-cvector* cov-block _double cov-size)])
+    ;; Copy the starting parameters into the params-block
+    (for ([i (in-naturals)]
+          [x (in-f64vector start-params)])
+      (ptr-set! params-block _double i x))
+    
     ((lm-minimize n-functions n-points)
      (evaluate-shim f)
-     start-params-copy
+     params
      (f64vector-zeros n-points)
      n-functions
      n-points
@@ -101,8 +111,17 @@
      #f
      cov
      data)
-    (values start-params-copy
-            (cvector->gsl_matrix cov n-functions n-functions))))
+
+    ;; Copy the values out of the malloced blocks into
+    ;; memory visible to the GC, and free the blocks
+    (let ([gc-cov (make-cvector _double cov-size)]
+          [gc-params (for/f64vector ([i n-functions])
+                       (ptr-ref params-block _double i))])
+      (memcpy (cvector-ptr gc-cov) cov-block cov-size _double)
+      (free cov-block)
+      (free params-block)
+      (values gc-params
+              (cvector->gsl_matrix gc-cov n-functions n-functions)))))
 
 (provide
  minimize)
